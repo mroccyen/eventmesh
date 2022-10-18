@@ -17,38 +17,62 @@
 
 package org.apache.eventmesh.connector.rabbitmq.consumer;
 
+import com.rabbitmq.client.BuiltinExchangeType;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
+import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqClient;
 
 import java.util.List;
 import java.util.Properties;
 
 public class RabbitmqConsumer implements Consumer {
+
+    private RabbitmqClient rabbitmqClient;
+
+    private Connection connection;
+
+    private Channel channel;
+
+    private volatile boolean started = false;
+
     @Override
     public boolean isStarted() {
-        return false;
+        return started;
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return !isStarted();
     }
 
     @Override
     public void start() {
-
+        if (!started) {
+            started = true;
+        }
     }
 
     @Override
     public void shutdown() {
-
+        if (started) {
+            try {
+                rabbitmqClient.closeConnection(connection);
+                rabbitmqClient.closeChannel(channel);
+            } finally {
+                started = false;
+            }
+        }
     }
 
     @Override
     public void init(Properties keyValue) throws Exception {
-
+        this.rabbitmqClient = new RabbitmqClient();
+        this.connection = rabbitmqClient.getConnection("", "", "", 0, "");
+        this.channel = connection.createChannel();
     }
 
     @Override
@@ -58,12 +82,18 @@ public class RabbitmqConsumer implements Consumer {
 
     @Override
     public void subscribe(String topic) throws Exception {
-
+        rabbitmqClient.consume(channel, BuiltinExchangeType.TOPIC,
+                "", "", "", true, "");
     }
 
     @Override
     public void unsubscribe(String topic) {
-
+        try {
+            channel.exchangeUnbind("", "", "");
+            channel.queueUnbind("", "", "");
+        } catch (Exception ex) {
+            //todo log
+        }
     }
 
     @Override
