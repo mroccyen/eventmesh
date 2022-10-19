@@ -20,10 +20,9 @@ package org.apache.eventmesh.connector.rabbitmq.consumer;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.EventMeshAction;
 import org.apache.eventmesh.api.EventMeshAsyncConsumeContext;
-import org.apache.eventmesh.common.utils.ByteArrayUtils;
+import org.apache.eventmesh.connector.rabbitmq.cloudevent.RabbitmqCloudEvent;
 import org.apache.eventmesh.connector.rabbitmq.config.ConfigurationHolder;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -54,18 +53,16 @@ public class RabbitmqConsumerHandler implements Runnable {
             try {
                 GetResponse response = channel.basicGet(configurationHolder.getQueueName(), configurationHolder.isAutoAck());
                 if (response != null) {
-                    Optional<CloudEvent> cloudEventOptional = ByteArrayUtils.bytesToObject(response.getBody());
-                    if (cloudEventOptional.isPresent()) {
-                        CloudEvent cloudEvent = cloudEventOptional.get();
-                        final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
-                            @Override
-                            public void commit(EventMeshAction action) {
-                                logger.info("[RabbitmqConsumerHandler] Rabbitmq consumer context commit.");
-                            }
-                        };
-                        if (eventListener != null) {
-                            eventListener.consume(cloudEvent, consumeContext);
+                    RabbitmqCloudEvent rabbitmqCloudEvent = RabbitmqCloudEvent.getFromByteArray(response.getBody());
+                    CloudEvent cloudEvent = rabbitmqCloudEvent.convertToCloudEvent();
+                    final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
+                        @Override
+                        public void commit(EventMeshAction action) {
+                            logger.info("[RabbitmqConsumerHandler] Rabbitmq consumer context commit.");
                         }
+                    };
+                    if (eventListener != null) {
+                        eventListener.consume(cloudEvent, consumeContext);
                     }
                     if (!configurationHolder.isAutoAck()) {
                         channel.basicAck(response.getEnvelope().getDeliveryTag(), false);

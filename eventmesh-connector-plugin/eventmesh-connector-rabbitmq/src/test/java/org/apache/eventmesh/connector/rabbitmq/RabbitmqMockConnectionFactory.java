@@ -17,11 +17,12 @@
 
 package org.apache.eventmesh.connector.rabbitmq;
 
+import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqConnectionFactory;
+
 import com.github.fridujo.rabbitmq.mock.MockConnectionFactory;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqConnectionFactory;
 
 public class RabbitmqMockConnectionFactory extends RabbitmqConnectionFactory {
 

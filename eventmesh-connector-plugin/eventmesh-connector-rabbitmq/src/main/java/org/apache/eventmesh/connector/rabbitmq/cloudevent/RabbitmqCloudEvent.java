@@ -17,80 +17,60 @@
 
 package org.apache.eventmesh.connector.rabbitmq.cloudevent;
 
-import io.cloudevents.CloudEvent;
-import io.cloudevents.CloudEventData;
-import io.cloudevents.SpecVersion;
+import org.apache.eventmesh.common.utils.ByteArrayUtils;
+import org.apache.eventmesh.connector.rabbitmq.exception.RabbitmqaConnectorException;
 
 import java.io.Serializable;
 import java.net.URI;
-import java.time.OffsetDateTime;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-public class RabbitmqCloudEvent implements CloudEvent, Serializable {
+import io.cloudevents.CloudEvent;
+import io.cloudevents.SpecVersion;
+import io.cloudevents.core.builder.CloudEventBuilder;
 
-    private final CloudEvent adapter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-    public RabbitmqCloudEvent(CloudEvent cloudEvent) {
-        this.adapter = cloudEvent;
+@Data
+@NoArgsConstructor
+public class RabbitmqCloudEvent implements Serializable {
+
+    private SpecVersion version;
+    private String data;
+    private Map<String, String> extensions = new HashMap<>();
+
+    public CloudEvent convertToCloudEvent() {
+        CloudEventBuilder builder;
+        switch (version) {
+            case V03:
+                builder = CloudEventBuilder.v03();
+                break;
+            case V1:
+                builder = CloudEventBuilder.v1();
+                break;
+            default:
+                throw new RabbitmqaConnectorException(String.format("CloudEvent version %s does not support.", version));
+        }
+        builder.withData(data.getBytes())
+                .withId(extensions.remove("id"))
+                .withSource(URI.create(extensions.remove("source")))
+                .withType(extensions.remove("type"))
+                .withDataContentType(extensions.remove("datacontenttype"))
+                .withSubject(extensions.remove("subject"));
+        extensions.forEach(builder::withExtension);
+
+        return builder.build();
     }
 
-    @Override
-    public CloudEventData getData() {
-        return adapter.getData();
+    public static byte[] toByteArray(RabbitmqCloudEvent rabbitmqCloudEvent) throws Exception {
+        Optional<byte[]> optionalBytes = ByteArrayUtils.objectToBytes(rabbitmqCloudEvent);
+        return optionalBytes.orElseGet(() -> new byte[]{});
     }
 
-    @Override
-    public SpecVersion getSpecVersion() {
-        return adapter.getSpecVersion();
-    }
-
-    @Override
-    public String getId() {
-        return adapter.getId();
-    }
-
-    @Override
-    public String getType() {
-        return adapter.getType();
-    }
-
-    @Override
-    public URI getSource() {
-        return adapter.getSource();
-    }
-
-    @Override
-    public String getDataContentType() {
-        return adapter.getDataContentType();
-    }
-
-    @Override
-    public URI getDataSchema() {
-        return adapter.getDataSchema();
-    }
-
-    @Override
-    public String getSubject() {
-        return adapter.getSubject();
-    }
-
-    @Override
-    public OffsetDateTime getTime() {
-        return adapter.getTime();
-    }
-
-    @Override
-    public Object getAttribute(String attributeName) throws IllegalArgumentException {
-        return adapter.getAttribute(attributeName);
-    }
-
-    @Override
-    public Object getExtension(String extensionName) {
-        return adapter.getExtension(extensionName);
-    }
-
-    @Override
-    public Set<String> getExtensionNames() {
-        return adapter.getExtensionNames();
+    public static RabbitmqCloudEvent getFromByteArray(byte[] body) throws Exception {
+        Optional<RabbitmqCloudEvent> optionalCloudEvent = ByteArrayUtils.bytesToObject(body);
+        return optionalCloudEvent.orElse(null);
     }
 }

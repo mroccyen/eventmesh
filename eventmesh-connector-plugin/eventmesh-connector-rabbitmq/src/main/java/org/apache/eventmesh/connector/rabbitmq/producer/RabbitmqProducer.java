@@ -27,6 +27,7 @@ import org.apache.eventmesh.common.utils.ByteArrayUtils;
 import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqClient;
 import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqConnectionFactory;
 import org.apache.eventmesh.connector.rabbitmq.cloudevent.RabbitmqCloudEvent;
+import org.apache.eventmesh.connector.rabbitmq.cloudevent.RabbitmqCloudEventWriter;
 import org.apache.eventmesh.connector.rabbitmq.config.ConfigurationHolder;
 
 import java.util.Optional;
@@ -97,10 +98,10 @@ public class RabbitmqProducer implements Producer {
     @Override
     public void publish(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
         try {
-            RabbitmqCloudEvent rabbitmqCloudEvent = new RabbitmqCloudEvent(cloudEvent);
-            Optional<byte[]> optionalBytes = ByteArrayUtils.objectToBytes(rabbitmqCloudEvent);
-            if (optionalBytes.isPresent()) {
-                byte[] data = optionalBytes.get();
+            RabbitmqCloudEventWriter writer = new RabbitmqCloudEventWriter();
+            RabbitmqCloudEvent rabbitmqCloudEvent = writer.writeBinary(cloudEvent);
+            byte[] data = RabbitmqCloudEvent.toByteArray(rabbitmqCloudEvent);
+            if (data != null) {
                 rabbitmqClient.publish(channel, configurationHolder.getExchangeName(), configurationHolder.getRoutingKey(), data);
 
                 SendResult sendResult = new SendResult();

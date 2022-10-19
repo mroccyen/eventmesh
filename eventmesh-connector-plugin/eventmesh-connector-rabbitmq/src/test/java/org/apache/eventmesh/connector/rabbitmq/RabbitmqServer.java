@@ -19,10 +19,11 @@ package org.apache.eventmesh.connector.rabbitmq;
 
 import org.apache.eventmesh.connector.rabbitmq.consumer.RabbitmqConsumer;
 import org.apache.eventmesh.connector.rabbitmq.producer.RabbitmqProducer;
-import org.junit.After;
-import org.junit.Before;
 
 import java.util.Properties;
+
+import org.junit.After;
+import org.junit.Before;
 
 public class RabbitmqServer {
     protected RabbitmqConsumer rabbitmqConsumer;
