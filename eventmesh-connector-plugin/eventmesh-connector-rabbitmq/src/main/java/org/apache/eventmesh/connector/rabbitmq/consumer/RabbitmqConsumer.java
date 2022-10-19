@@ -22,6 +22,7 @@ import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
 import org.apache.eventmesh.common.ThreadPoolFactory;
 import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqClient;
+import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqConnectionFactory;
 import org.apache.eventmesh.connector.rabbitmq.config.ConfigurationHolder;
 
 import java.util.List;
@@ -39,6 +40,8 @@ import com.rabbitmq.client.Connection;
 public class RabbitmqConsumer implements Consumer {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitmqConsumer.class);
+
+    private RabbitmqConnectionFactory rabbitmqConnectionFactory = new RabbitmqConnectionFactory();
 
     private RabbitmqClient rabbitmqClient;
 
@@ -90,10 +93,10 @@ public class RabbitmqConsumer implements Consumer {
     @Override
     public void init(Properties keyValue) throws Exception {
         this.configurationHolder.init();
-        this.rabbitmqClient = new RabbitmqClient();
+        this.rabbitmqClient = new RabbitmqClient(rabbitmqConnectionFactory);
         this.connection = rabbitmqClient.getConnection(configurationHolder.getHost(), configurationHolder.getUsername(),
                 configurationHolder.getPasswd(), configurationHolder.getPort(), configurationHolder.getVirtualHost());
-        this.channel = connection.createChannel();
+        this.channel = rabbitmqConnectionFactory.createChannel(connection);
         this.rabbitmqConsumerHandler = new RabbitmqConsumerHandler(channel, configurationHolder);
     }
 
@@ -123,5 +126,9 @@ public class RabbitmqConsumer implements Consumer {
     @Override
     public void registerEventListener(EventListener listener) {
         rabbitmqConsumerHandler.setEventListener(listener);
+    }
+
+    public void setRabbitmqConnectionFactory(RabbitmqConnectionFactory rabbitmqConnectionFactory) {
+        this.rabbitmqConnectionFactory = rabbitmqConnectionFactory;
     }
 }

@@ -31,6 +31,13 @@ public class RabbitmqClient {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitmqClient.class);
 
+    private final RabbitmqConnectionFactory rabbitmqConnectionFactory;
+
+    public RabbitmqClient(RabbitmqConnectionFactory rabbitmqConnectionFactory) {
+        this.rabbitmqConnectionFactory = rabbitmqConnectionFactory;
+    }
+
+
     /**
      * get rabbitmq connection
      *
@@ -45,7 +52,7 @@ public class RabbitmqClient {
     public Connection getConnection(String host, String username,
                                     String passwd, int port,
                                     String virtualHost) throws Exception {
-        ConnectionFactory factory = new ConnectionFactory();
+        ConnectionFactory factory = rabbitmqConnectionFactory.createConnectionFactory();
         factory.setHost(host.trim());
         factory.setPort(port);
         virtualHost = virtualHost.trim().startsWith("/") ? virtualHost : "/" + virtualHost;
@@ -55,7 +62,7 @@ public class RabbitmqClient {
         factory.setUsername(username);
         factory.setPassword(passwd.trim());
 
-        return factory.newConnection();
+        return rabbitmqConnectionFactory.createConnection(factory);
     }
 
     /**

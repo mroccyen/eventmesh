@@ -25,6 +25,8 @@ import org.apache.eventmesh.api.exception.OnExceptionContext;
 import org.apache.eventmesh.api.producer.Producer;
 import org.apache.eventmesh.common.utils.ByteArrayUtils;
 import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqClient;
+import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqConnectionFactory;
+import org.apache.eventmesh.connector.rabbitmq.cloudevent.RabbitmqCloudEvent;
 import org.apache.eventmesh.connector.rabbitmq.config.ConfigurationHolder;
 
 import java.util.Optional;
@@ -41,6 +43,8 @@ import com.rabbitmq.client.Connection;
 public class RabbitmqProducer implements Producer {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitmqProducer.class);
+
+    private RabbitmqConnectionFactory rabbitmqConnectionFactory = new RabbitmqConnectionFactory();
 
     private RabbitmqClient rabbitmqClient;
 
@@ -84,16 +88,17 @@ public class RabbitmqProducer implements Producer {
     @Override
     public void init(Properties properties) throws Exception {
         this.configurationHolder.init();
-        this.rabbitmqClient = new RabbitmqClient();
+        this.rabbitmqClient = new RabbitmqClient(rabbitmqConnectionFactory);
         this.connection = rabbitmqClient.getConnection(configurationHolder.getHost(), configurationHolder.getUsername(),
                 configurationHolder.getPasswd(), configurationHolder.getPort(), configurationHolder.getVirtualHost());
-        this.channel = connection.createChannel();
+        this.channel = rabbitmqConnectionFactory.createChannel(connection);
     }
 
     @Override
     public void publish(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
         try {
-            Optional<byte[]> optionalBytes = ByteArrayUtils.objectToBytes(cloudEvent);
+            RabbitmqCloudEvent rabbitmqCloudEvent = new RabbitmqCloudEvent(cloudEvent);
+            Optional<byte[]> optionalBytes = ByteArrayUtils.objectToBytes(rabbitmqCloudEvent);
             if (optionalBytes.isPresent()) {
                 byte[] data = optionalBytes.get();
                 rabbitmqClient.publish(channel, configurationHolder.getExchangeName(), configurationHolder.getRoutingKey(), data);
@@ -147,5 +152,9 @@ public class RabbitmqProducer implements Producer {
     @Override
     public void setExtFields() {
 
+    }
+
+    public void setRabbitmqConnectionFactory(RabbitmqConnectionFactory rabbitmqConnectionFactory) {
+        this.rabbitmqConnectionFactory = rabbitmqConnectionFactory;
     }
 }
