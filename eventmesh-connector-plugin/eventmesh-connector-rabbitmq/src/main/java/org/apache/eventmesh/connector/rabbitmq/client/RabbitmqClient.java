@@ -17,14 +17,15 @@
 
 package org.apache.eventmesh.connector.rabbitmq.client;
 
+import org.apache.commons.lang3.StringUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.GetResponse;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RabbitmqClient {
 
@@ -67,25 +68,21 @@ public class RabbitmqClient {
      * @throws Exception Exception
      */
     public void publish(Channel channel, String exchangeName,
-                        String routingKey, String message) throws Exception {
-        channel.basicPublish(exchangeName, routingKey, null, message.getBytes());
+                        String routingKey, byte[] message) throws Exception {
+        channel.basicPublish(exchangeName, routingKey, null, message);
     }
 
     /**
-     * consume message
+     * binding queue
      *
      * @param channel             channel
      * @param builtinExchangeType exchange type
      * @param exchangeName        exchange name
      * @param routingKey          routing key
      * @param queueName           queue name
-     * @param autoAck             true is auto ack
-     * @param encoding            encoding
      */
-    public void consume(Channel channel, BuiltinExchangeType builtinExchangeType,
-                        String exchangeName, String routingKey, String queueName,
-                        boolean autoAck, String encoding) {
-        encoding = StringUtils.isNotBlank(encoding) ? encoding : "utf-8";
+    public void binding(Channel channel, BuiltinExchangeType builtinExchangeType,
+                        String exchangeName, String routingKey, String queueName) {
         try {
             channel.exchangeDeclare(exchangeName, builtinExchangeType.getType(), true,
                     false, false, null);
@@ -93,24 +90,39 @@ public class RabbitmqClient {
                     false, null);
             routingKey = builtinExchangeType.getType().equals(BuiltinExchangeType.FANOUT.getType()) ? "" : routingKey;
             channel.queueBind(queueName, exchangeName, routingKey);
-
-            while (true) {
-                GetResponse response = channel.basicGet(queueName, autoAck);
-                if (response != null) {
-                    logger.info(new String(response.getBody(), encoding));
-                    channel.basicAck(response.getEnvelope().getDeliveryTag(), false);
-                    channel.basicNack(response.getEnvelope().getDeliveryTag(), false, true);
-                }
-            }
         } catch (Exception ex) {
-            //todo log
+            logger.error("[RabbitmqClient] binding happen exception.", ex);
         } finally {
             try {
                 if (channel != null && channel.isOpen()) {
                     channel.close();
                 }
             } catch (Exception ex) {
-                //todo log
+                logger.error("[RabbitmqClient] binding channel close happen exception.", ex);
+            }
+        }
+    }
+
+    /**
+     * unbinding queue
+     *
+     * @param channel      channel
+     * @param exchangeName exchange name
+     * @param routingKey   routing key
+     * @param queueName    queue name
+     */
+    public void unbinding(Channel channel, String exchangeName, String routingKey, String queueName) {
+        try {
+            channel.queueUnbind(queueName, exchangeName, routingKey);
+        } catch (Exception ex) {
+            logger.error("[RabbitmqClient] unbinding happen exception.", ex);
+        } finally {
+            try {
+                if (channel != null && channel.isOpen()) {
+                    channel.close();
+                }
+            } catch (Exception ex) {
+                logger.error("[RabbitmqClient] unbinding channel close happen exception.", ex);
             }
         }
     }
@@ -125,7 +137,7 @@ public class RabbitmqClient {
             try {
                 connection.close();
             } catch (Exception ex) {
-                //todo log
+                logger.error("[RabbitmqClient] connection close happen exception.", ex);
             }
         }
     }
@@ -140,7 +152,7 @@ public class RabbitmqClient {
             try {
                 channel.close();
             } catch (Exception ex) {
-                //todo log
+                logger.error("[RabbitmqClient] channel close happen exception.", ex);
             }
         }
     }

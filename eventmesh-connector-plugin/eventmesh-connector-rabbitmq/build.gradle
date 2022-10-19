@@ -43,4 +43,6 @@ dependencies {
 
     testCompileOnly 'org.projectlombok:lombok:1.18.22'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    testImplementation('com.github.fridujo:rabbitmq-mock:1.1.1')
 }

@@ -17,19 +17,28 @@
 
 package org.apache.eventmesh.connector.rabbitmq.consumer;
 
-import com.rabbitmq.client.BuiltinExchangeType;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
+import org.apache.eventmesh.common.ThreadPoolFactory;
 import org.apache.eventmesh.connector.rabbitmq.client.RabbitmqClient;
+import org.apache.eventmesh.connector.rabbitmq.config.ConfigurationHolder;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ThreadPoolExecutor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.cloudevents.CloudEvent;
+
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 
 public class RabbitmqConsumer implements Consumer {
+
+    private static final Logger logger = LoggerFactory.getLogger(RabbitmqConsumer.class);
 
     private RabbitmqClient rabbitmqClient;
 
@@ -38,6 +47,15 @@ public class RabbitmqConsumer implements Consumer {
     private Channel channel;
 
     private volatile boolean started = false;
+
+    private final ConfigurationHolder configurationHolder = new ConfigurationHolder();
+
+    private final ThreadPoolExecutor executor = ThreadPoolFactory.createThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors() * 2,
+            Runtime.getRuntime().availableProcessors() * 2,
+            "EventMesh-Rabbitmq-Consumer-");
+
+    private RabbitmqConsumerHandler rabbitmqConsumerHandler;
 
     @Override
     public boolean isStarted() {
@@ -62,6 +80,7 @@ public class RabbitmqConsumer implements Consumer {
             try {
                 rabbitmqClient.closeConnection(connection);
                 rabbitmqClient.closeChannel(channel);
+                rabbitmqConsumerHandler.stop();
             } finally {
                 started = false;
             }
@@ -70,9 +89,12 @@ public class RabbitmqConsumer implements Consumer {
 
     @Override
     public void init(Properties keyValue) throws Exception {
+        this.configurationHolder.init();
         this.rabbitmqClient = new RabbitmqClient();
-        this.connection = rabbitmqClient.getConnection("", "", "", 0, "");
+        this.connection = rabbitmqClient.getConnection(configurationHolder.getHost(), configurationHolder.getUsername(),
+                configurationHolder.getPasswd(), configurationHolder.getPort(), configurationHolder.getVirtualHost());
         this.channel = connection.createChannel();
+        this.rabbitmqConsumerHandler = new RabbitmqConsumerHandler(channel, configurationHolder);
     }
 
     @Override
@@ -81,23 +103,25 @@ public class RabbitmqConsumer implements Consumer {
     }
 
     @Override
-    public void subscribe(String topic) throws Exception {
-        rabbitmqClient.consume(channel, BuiltinExchangeType.TOPIC,
-                "", "", "", true, "");
+    public void subscribe(String topic) {
+        rabbitmqClient.binding(channel, configurationHolder.getExchangeType(), configurationHolder.getExchangeName(),
+                configurationHolder.getRoutingKey(), configurationHolder.getQueueName());
+        executor.execute(rabbitmqConsumerHandler);
     }
 
     @Override
     public void unsubscribe(String topic) {
         try {
-            channel.exchangeUnbind("", "", "");
-            channel.queueUnbind("", "", "");
+            rabbitmqClient.unbinding(channel, configurationHolder.getExchangeName(),
+                    configurationHolder.getRoutingKey(), configurationHolder.getQueueName());
+            rabbitmqConsumerHandler.stop();
         } catch (Exception ex) {
-            //todo log
+            logger.error("[RabbitmqConsumer] unsubscribe happen exception.", ex);
         }
     }
 
     @Override
     public void registerEventListener(EventListener listener) {
-
+        rabbitmqConsumerHandler.setEventListener(listener);
     }
 }
