@@ -54,6 +54,7 @@ public class RabbitmqConsumerHandler implements Runnable {
                 GetResponse response = channel.basicGet(configurationHolder.getQueueName(), configurationHolder.isAutoAck());
                 if (response != null) {
                     RabbitmqCloudEvent rabbitmqCloudEvent = RabbitmqCloudEvent.getFromByteArray(response.getBody());
+                    logger.info("[RabbitmqConsumerHandler] Rabbitmq consumer cloud event: {}", rabbitmqCloudEvent.getExtensions());
                     CloudEvent cloudEvent = rabbitmqCloudEvent.convertToCloudEvent();
                     final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
                         @Override
