@@ -28,7 +28,7 @@ import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.EventMeshAction;
 import org.apache.eventmesh.api.EventMeshAsyncConsumeContext;
 import org.apache.eventmesh.api.consumer.Consumer;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientReplicaSetManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
 import org.bson.Document;
@@ -77,7 +77,7 @@ public class MongodbReplicaSetConsumer implements Consumer {
         if (started) {
             try {
                 if (this.mongoClient != null) {
-                    MongodbClientManager.closeMongodbClient(this.mongoClient);
+                    MongodbClientReplicaSetManager.closeMongodbClient(this.mongoClient);
                 }
                 if (this.cursor != null) {
                     this.cursor.close();
@@ -91,7 +91,7 @@ public class MongodbReplicaSetConsumer implements Consumer {
     @Override
     public void init(Properties keyValue) {
         this.configurationHolder.init();
-        this.mongoClient = MongodbClientManager.createMongodbClient(configurationHolder.getUrl());
+        this.mongoClient = MongodbClientReplicaSetManager.createMongodbClient(configurationHolder.getUrl());
     }
 
     @Override

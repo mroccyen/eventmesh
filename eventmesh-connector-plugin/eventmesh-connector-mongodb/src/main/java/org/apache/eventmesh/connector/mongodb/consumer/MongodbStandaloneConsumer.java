@@ -30,33 +30,45 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     private final ConfigurationHolder configurationHolder;
 
+    private volatile boolean started = false;
+
+    private EventListener eventListener;
+
     public MongodbStandaloneConsumer(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
     }
 
     @Override
     public boolean isStarted() {
-        return false;
+        return started;
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return !isStarted();
     }
 
     @Override
     public void start() {
-
+        if (!started) {
+            started = true;
+        }
     }
 
     @Override
     public void shutdown() {
+        if (started) {
+            try {
 
+            } finally {
+                started = false;
+            }
+        }
     }
 
     @Override
     public void init(Properties keyValue) {
-
+        this.configurationHolder.init();
     }
 
     @Override
@@ -76,6 +88,6 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     @Override
     public void registerEventListener(EventListener listener) {
-
+        this.eventListener = listener;
     }
 }

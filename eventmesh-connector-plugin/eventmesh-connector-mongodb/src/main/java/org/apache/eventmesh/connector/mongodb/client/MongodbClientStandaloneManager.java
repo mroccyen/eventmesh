@@ -17,20 +17,29 @@
 
 package org.apache.eventmesh.connector.mongodb.client;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
+import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 
-public class MongodbClientManager {
+import java.net.InetSocketAddress;
+
+public class MongodbClientStandaloneManager {
     /**
      * create mongodb client
      *
-     * @param url url, like: mongodb://root:root@192.168.74.143:27018,192.168.74.143:27019
+     * @param config ConfigurationHolder
      * @return mongodb client
      */
-    public static MongoClient createMongodbClient(String url) {
-        ConnectionString connectionString = new ConnectionString(url);
-        return MongoClients.create(connectionString);
+    public static MongoClient createMongodbClient(ConfigurationHolder config) {
+        String url = config.getUrl();
+        String[] split = url.split(":");
+        InetSocketAddress address = new InetSocketAddress(split[0], Integer.parseInt(split[1]));
+        ServerAddress serverAddress = new ServerAddress(address);
+
+        MongoCredential credential = MongoCredential.createCredential(config.getUsername(), config.getDatabase(), config.getPassword().toCharArray());
+
+        return new MongoClient(serverAddress, credential, null);
     }
 
     /**
