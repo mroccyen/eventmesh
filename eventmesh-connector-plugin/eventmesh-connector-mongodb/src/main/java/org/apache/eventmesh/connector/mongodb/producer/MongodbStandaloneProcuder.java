@@ -21,16 +21,17 @@ import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
 import org.apache.eventmesh.api.producer.Producer;
-import org.apache.eventmesh.connector.mongodb.config.ConfigKey;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 
 import java.util.Properties;
 
-public class MongodbProducer implements Producer {
+public class MongodbStandaloneProcuder implements Producer {
 
-    private final ConfigurationHolder configurationHolder = new ConfigurationHolder();
+    private final ConfigurationHolder configurationHolder;
 
-    private Producer producer;
+    public MongodbStandaloneProcuder(ConfigurationHolder configurationHolder) {
+        this.configurationHolder = configurationHolder;
+    }
 
     @Override
     public boolean isStarted() {
@@ -54,18 +55,11 @@ public class MongodbProducer implements Producer {
 
     @Override
     public void init(Properties properties) throws Exception {
-        String connectorType = configurationHolder.getConnectorType();
-        if (connectorType.equals(ConfigKey.STANDALONE)) {
-            producer = new MongodbStandaloneProcuder(configurationHolder);
-        }
-        if (connectorType.equals(ConfigKey.REPLICA_SET)) {
-            producer = new MongodbReplicaSetProducer(configurationHolder);
-        }
-        producer.init(properties);
+
     }
 
     @Override
-    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) {
+    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
 
     }
 
@@ -75,17 +69,17 @@ public class MongodbProducer implements Producer {
     }
 
     @Override
-    public void request(CloudEvent cloudEvent, RequestReplyCallback rrCallback, long timeout) {
+    public void request(CloudEvent cloudEvent, RequestReplyCallback rrCallback, long timeout) throws Exception {
 
     }
 
     @Override
-    public boolean reply(CloudEvent cloudEvent, SendCallback sendCallback) {
+    public boolean reply(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
         return false;
     }
 
     @Override
-    public void checkTopicExist(String topic) {
+    public void checkTopicExist(String topic) throws Exception {
 
     }
 

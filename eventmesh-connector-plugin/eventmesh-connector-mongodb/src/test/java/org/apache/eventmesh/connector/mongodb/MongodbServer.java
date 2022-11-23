@@ -33,7 +33,7 @@ public class MongodbServer {
     protected final MongodbProducer mongodbProducer = new MongodbProducer();
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         server1 = new MongoServer(new MemoryBackend());
         server1.bind("127.0.0.1", 27018);
         server2 = new MongoServer(new MemoryBackend());

@@ -21,67 +21,61 @@ import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
-import org.apache.eventmesh.connector.mongodb.config.ConfigKey;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 
 import java.util.List;
 import java.util.Properties;
 
-public class MongodbConsumer implements Consumer {
+public class MongodbStandaloneConsumer implements Consumer {
 
-    private final ConfigurationHolder configurationHolder = new ConfigurationHolder();
+    private final ConfigurationHolder configurationHolder;
 
-    private Consumer consumer;
+    public MongodbStandaloneConsumer(ConfigurationHolder configurationHolder) {
+        this.configurationHolder = configurationHolder;
+    }
 
     @Override
     public boolean isStarted() {
-        return consumer.isStarted();
+        return false;
     }
 
     @Override
     public boolean isClosed() {
-        return consumer.isClosed();
+        return false;
     }
 
     @Override
     public void start() {
-        consumer.start();
+
     }
 
     @Override
     public void shutdown() {
-        consumer.shutdown();
+
     }
 
     @Override
-    public void init(Properties keyValue) throws Exception {
-        String connectorType = configurationHolder.getConnectorType();
-        if (connectorType.equals(ConfigKey.STANDALONE)) {
-            consumer = new MongodbStandaloneConsumer(configurationHolder);
-        }
-        if (connectorType.equals(ConfigKey.REPLICA_SET)) {
-            consumer = new MongodbReplicaSetConsumer(configurationHolder);
-        }
-        consumer.init(keyValue);
+    public void init(Properties keyValue) {
+
     }
 
     @Override
     public void updateOffset(List<CloudEvent> cloudEvents, AbstractContext context) {
-        consumer.updateOffset(cloudEvents, context);
+
     }
 
     @Override
-    public void subscribe(String topic) throws Exception {
-        consumer.subscribe(topic);
+    public void subscribe(String topic) {
+
     }
 
     @Override
     public void unsubscribe(String topic) {
-        consumer.unsubscribe(topic);
+
     }
 
     @Override
     public void registerEventListener(EventListener listener) {
-        consumer.registerEventListener(listener);
+
     }
 }
