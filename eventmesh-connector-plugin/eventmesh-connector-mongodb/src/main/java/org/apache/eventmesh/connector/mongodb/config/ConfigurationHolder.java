@@ -23,23 +23,45 @@ import org.apache.commons.lang3.StringUtils;
 
 @Data
 public class ConfigurationHolder {
+    private String connectorType;
+
     private String url;
+
+    private String username;
+
+    private String password;
 
     private String database;
 
     private String collection;
 
     public void init() {
+        String connectorType = ConfigurationWrapper.getProperty(ConfigKey.CONNECTOR_TYPE);
+        Preconditions.checkState(StringUtils.isNotEmpty(connectorType), String.format("%s is not null", ConfigKey.CONNECTOR_TYPE));
+        boolean c = connectorType.equals(ConfigKey.STANDALONE) || connectorType.equals(ConfigKey.REPLICA_SET);
+        Preconditions.checkState(c, String.format("%s error", ConfigKey.CONNECTOR_TYPE));
+        this.connectorType = connectorType;
+
+        if (ConfigKey.STANDALONE.equals(connectorType)) {
+            String username = ConfigurationWrapper.getProperty(ConfigKey.USERNAME);
+            String password = ConfigurationWrapper.getProperty(ConfigKey.PASSWORD);
+            boolean condition = (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password))
+                    || (StringUtils.isEmpty(username) && StringUtils.isEmpty(password));
+            Preconditions.checkState(condition, String.format("%s and %s config in pairs", ConfigKey.USERNAME, ConfigKey.PASSWORD));
+            this.username = username;
+            this.password = password;
+        }
+
         String url = ConfigurationWrapper.getProperty(ConfigKey.URL);
-        Preconditions.checkState(StringUtils.isNotEmpty(url), String.format("%s error", ConfigKey.URL));
+        Preconditions.checkState(StringUtils.isNotEmpty(url), String.format("%s is not null", ConfigKey.URL));
         this.url = url;
 
         String database = ConfigurationWrapper.getProperty(ConfigKey.DATABASE);
-        Preconditions.checkState(StringUtils.isNotEmpty(database), String.format("%s error", ConfigKey.DATABASE));
+        Preconditions.checkState(StringUtils.isNotEmpty(database), String.format("%s is not null", ConfigKey.DATABASE));
         this.database = database;
 
         String collection = ConfigurationWrapper.getProperty(ConfigKey.COLLECTION);
-        Preconditions.checkState(StringUtils.isNotEmpty(collection), String.format("%s error", ConfigKey.COLLECTION));
+        Preconditions.checkState(StringUtils.isNotEmpty(collection), String.format("%s is not null", ConfigKey.COLLECTION));
         this.collection = collection;
     }
 }

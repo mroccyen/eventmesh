@@ -18,10 +18,18 @@
 package org.apache.eventmesh.connector.mongodb.config;
 
 public class ConfigKey {
-    /**
-     * like: mongodb://root:root@127.0.0.1:27018,127.0.0.1:27019
-     */
+
+    public static final String STANDALONE = "STANDALONE";
+
+    public static final String REPLICA_SET = "REPLICA_SET";
+
+    public static final String CONNECTOR_TYPE = "eventMesh.server.mongodb.connector.type";
+
     public static final String URL = "eventMesh.server.mongodb.url";
+
+    public static final String USERNAME = "eventMesh.server.mongodb.username";
+
+    public static final String PASSWORD = "eventMesh.server.mongodb.password";
 
     public static final String DATABASE = "eventMesh.server.mongodb.database";
 
