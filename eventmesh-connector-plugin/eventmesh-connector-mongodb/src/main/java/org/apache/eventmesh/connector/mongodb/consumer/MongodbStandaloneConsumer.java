@@ -17,14 +17,21 @@
 
 package org.apache.eventmesh.connector.mongodb.consumer;
 
+import com.mongodb.*;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
+import org.apache.eventmesh.common.ThreadPoolFactory;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
+import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MongodbStandaloneConsumer implements Consumer {
 
@@ -33,6 +40,14 @@ public class MongodbStandaloneConsumer implements Consumer {
     private volatile boolean started = false;
 
     private EventListener eventListener;
+
+    private MongoClient client;
+
+    private DB db;
+
+    private DBCollection cappedCol;
+
+    private final ThreadPoolExecutor executor = ThreadPoolFactory.createThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Runtime.getRuntime().availableProcessors() * 2, "EventMesh-Mongodb-Consumer-");
 
     public MongodbStandaloneConsumer(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
@@ -59,7 +74,7 @@ public class MongodbStandaloneConsumer implements Consumer {
     public void shutdown() {
         if (started) {
             try {
-
+                MongodbClientStandaloneManager.closeMongodbClient(this.client);
             } finally {
                 started = false;
             }
@@ -69,6 +84,9 @@ public class MongodbStandaloneConsumer implements Consumer {
     @Override
     public void init(Properties keyValue) {
         this.configurationHolder.init();
+        this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
+        this.db = client.getDB(configurationHolder.getDatabase());
+        this.cappedCol = db.getCollection(configurationHolder.getCollection());
     }
 
     @Override
@@ -78,7 +96,7 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     @Override
     public void subscribe(String topic) {
-
+        executor.execute(new SubTask());
     }
 
     @Override
@@ -89,5 +107,53 @@ public class MongodbStandaloneConsumer implements Consumer {
     @Override
     public void registerEventListener(EventListener listener) {
         this.eventListener = listener;
+    }
+
+    private DBCursor getCursor(DBCollection collection, String topic, int lastId) {
+        DBObject options = new BasicDBObject()
+                .append(MongodbConstants.CAPPED_COL_OPTION_TAILABLE_FN, true)
+                .append(MongodbConstants.CAPPED_COL_OPTION_AWAIT_DATA_FN, true)
+                .append(MongodbConstants.CAPPED_COL_TOPIC_FN, true)
+                .append(MongodbConstants.CAPPED_COL_NAME_FN, true)
+                .append(MongodbConstants.CAPPED_COL_CURSOR_FN, true);
+
+        DBObject index = new BasicDBObject("$gt", lastId);
+        BasicDBObject ts = new BasicDBObject(MongodbConstants.CAPPED_COL_CURSOR_FN, index);
+
+        DBObject spec = ts.append(MongodbConstants.CAPPED_COL_TOPIC_FN, topic);
+        DBCursor cur = collection.find(spec, options);
+        cur = cur.addOption(8);
+        return cur;
+    }
+
+    private class SubTask implements Runnable {
+        private final AtomicBoolean stop = new AtomicBoolean(false);
+
+        public void run() {
+            int lastId = -1;
+            while (!stop.get()) {
+                DBCursor cur = getCursor(cappedCol, MongodbConstants.Topic, lastId);
+                Iterator<DBObject> it = cur.iterator();
+                while (it.hasNext()) {
+                    DBObject obj = it.next();
+                    System.out.println("name is:" + obj.get(MongodbConstants.CAPPED_COL_NAME_FN));
+                    try {
+                        lastId = (int) ((Double) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN)).doubleValue();
+                    } catch (ClassCastException ce) {
+                        lastId = (Integer) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN);
+                    }
+                    System.out.println("last index is:" + lastId);
+                }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        public void stop() {
+            stop.set(true);
+        }
     }
 }

@@ -17,11 +17,15 @@
 
 package org.apache.eventmesh.connector.mongodb.producer;
 
+import com.mongodb.*;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
 import org.apache.eventmesh.api.producer.Producer;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
+import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
+import org.apache.eventmesh.connector.mongodb.utils.MongodbSequenceUtil;
 
 import java.util.Properties;
 
@@ -29,38 +33,63 @@ public class MongodbStandaloneProcuder implements Producer {
 
     private final ConfigurationHolder configurationHolder;
 
+    private volatile boolean started = false;
+
+    private MongoClient client;
+
+    private DB db;
+
+    private DBCollection cappedCol;
+
     public MongodbStandaloneProcuder(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
     }
 
     @Override
     public boolean isStarted() {
-        return false;
+        return started;
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return !isStarted();
     }
 
     @Override
     public void start() {
-
+        if (!started) {
+            started = true;
+        }
     }
 
     @Override
     public void shutdown() {
-
+        if (started) {
+            try {
+                MongodbClientStandaloneManager.closeMongodbClient(this.client);
+            } finally {
+                started = false;
+            }
+        }
     }
 
     @Override
-    public void init(Properties properties) throws Exception {
-
+    public void init(Properties keyValue) {
+        this.configurationHolder.init();
+        this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
+        this.db = client.getDB(configurationHolder.getDatabase());
+        this.cappedCol = db.getCollection(configurationHolder.getCollection());
     }
 
     @Override
-    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
-
+    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) {
+        int i = MongodbSequenceUtil.getInstance().getNextSeq(MongodbConstants.Topic);
+        DBObject doc = new BasicDBObject()
+                .append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.Topic)
+                .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
+                .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
+        System.out.println("publisher is going to publish number " + i + "th message");
+        cappedCol.insert(doc);
     }
 
     @Override

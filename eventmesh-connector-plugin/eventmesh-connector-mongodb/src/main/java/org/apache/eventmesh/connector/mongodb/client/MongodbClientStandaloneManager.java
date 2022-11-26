@@ -20,6 +20,7 @@ package org.apache.eventmesh.connector.mongodb.client;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 
 import java.net.InetSocketAddress;
@@ -36,10 +37,12 @@ public class MongodbClientStandaloneManager {
         String[] split = url.split(":");
         InetSocketAddress address = new InetSocketAddress(split[0], Integer.parseInt(split[1]));
         ServerAddress serverAddress = new ServerAddress(address);
-
-        MongoCredential credential = MongoCredential.createCredential(config.getUsername(), config.getDatabase(), config.getPassword().toCharArray());
-
-        return new MongoClient(serverAddress, credential, null);
+        if (StringUtils.isNotEmpty(config.getUsername()) && StringUtils.isNotEmpty(config.getPassword())) {
+            MongoCredential credential = MongoCredential.createCredential(config.getUsername(), config.getDatabase(), config.getPassword().toCharArray());
+            return new MongoClient(serverAddress, credential, null);
+        } else {
+            return new MongoClient(serverAddress);
+        }
     }
 
     /**
