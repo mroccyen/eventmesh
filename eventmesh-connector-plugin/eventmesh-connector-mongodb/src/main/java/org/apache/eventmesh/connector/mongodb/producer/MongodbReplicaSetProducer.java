@@ -80,7 +80,6 @@ public class MongodbReplicaSetProducer implements Producer {
 
     @Override
     public void init(Properties properties) {
-        this.configurationHolder.init();
         this.mongoClient = MongodbClientReplicaSetManager.createMongodbClient(configurationHolder.getUrl());
     }
 

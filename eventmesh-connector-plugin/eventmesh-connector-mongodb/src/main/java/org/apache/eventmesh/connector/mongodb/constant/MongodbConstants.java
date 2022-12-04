@@ -1,7 +1,7 @@
 package org.apache.eventmesh.connector.mongodb.constant;
 
 public class MongodbConstants {
-	public static final String Topic = "topic1";
+	public static final String TOPIC = "topic1";
 	public static final String CAPPED_COL_NAME_FN = "name";
 	public static final String CAPPED_COL_TOPIC_FN = "topic";
 	public static final String CAPPED_COL_OPTION_TAILABLE_FN = "tailable";

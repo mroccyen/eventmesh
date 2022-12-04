@@ -29,8 +29,8 @@ import java.util.Properties;
 public class MongodbServer {
     private MongoServer server1;
     private MongoServer server2;
-    protected final MongodbConsumer mongodbConsumer = new MongodbConsumer();
-    protected final MongodbProducer mongodbProducer = new MongodbProducer();
+    public final MongodbConsumer mongodbConsumer = new MongodbConsumer();
+    public final MongodbProducer mongodbProducer = new MongodbProducer();
 
     @Before
     public void setup() throws Exception {

@@ -90,7 +90,6 @@ public class MongodbReplicaSetConsumer implements Consumer {
 
     @Override
     public void init(Properties keyValue) {
-        this.configurationHolder.init();
         this.mongoClient = MongodbClientReplicaSetManager.createMongodbClient(configurationHolder.getUrl());
     }
 

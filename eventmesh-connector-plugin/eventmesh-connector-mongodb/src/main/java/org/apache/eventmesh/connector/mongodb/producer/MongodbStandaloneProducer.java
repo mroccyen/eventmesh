@@ -17,19 +17,30 @@
 
 package org.apache.eventmesh.connector.mongodb.producer;
 
-import com.mongodb.*;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.MongoClient;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
+import org.apache.eventmesh.api.SendResult;
+import org.apache.eventmesh.api.exception.ConnectorRuntimeException;
+import org.apache.eventmesh.api.exception.OnExceptionContext;
 import org.apache.eventmesh.api.producer.Producer;
 import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
+import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbSequenceUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class MongodbStandaloneProcuder implements Producer {
+public class MongodbStandaloneProducer implements Producer {
+
+    private static final Logger logger = LoggerFactory.getLogger(MongodbStandaloneProducer.class);
 
     private final ConfigurationHolder configurationHolder;
 
@@ -41,7 +52,9 @@ public class MongodbStandaloneProcuder implements Producer {
 
     private DBCollection cappedCol;
 
-    public MongodbStandaloneProcuder(ConfigurationHolder configurationHolder) {
+    private MongodbSequenceUtil mongodbSequenceUtil;
+
+    public MongodbStandaloneProducer(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
     }
 
@@ -75,26 +88,52 @@ public class MongodbStandaloneProcuder implements Producer {
 
     @Override
     public void init(Properties keyValue) {
-        this.configurationHolder.init();
         this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
         this.db = client.getDB(configurationHolder.getDatabase());
         this.cappedCol = db.getCollection(configurationHolder.getCollection());
+        this.mongodbSequenceUtil = new MongodbSequenceUtil(configurationHolder);
     }
 
     @Override
     public void publish(CloudEvent cloudEvent, SendCallback sendCallback) {
-        int i = MongodbSequenceUtil.getInstance().getNextSeq(MongodbConstants.Topic);
-        DBObject doc = new BasicDBObject()
-                .append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.Topic)
-                .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
-                .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
-        System.out.println("publisher is going to publish number " + i + "th message");
-        cappedCol.insert(doc);
+        try {
+            BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
+            int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
+            doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
+                    .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
+                    .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
+            logger.info("publisher is going to publish number " + i + "th message");
+            cappedCol.insert(doc);
+
+            SendResult sendResult = new SendResult();
+            sendResult.setTopic(cloudEvent.getSubject());
+            sendResult.setMessageId(cloudEvent.getId());
+            sendCallback.onSuccess(sendResult);
+        } catch (Exception ex) {
+            logger.error("[MongodbReplicaSetProducer] publish happen exception.", ex);
+            sendCallback.onException(
+                    OnExceptionContext.builder()
+                            .topic(cloudEvent.getSubject())
+                            .messageId(cloudEvent.getId())
+                            .exception(new ConnectorRuntimeException(ex))
+                            .build()
+            );
+        }
     }
 
     @Override
     public void sendOneway(CloudEvent cloudEvent) {
-
+        try {
+            BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
+            int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
+            doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
+                    .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
+                    .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
+            logger.info("publisher is going to publish number " + i + "th message");
+            cappedCol.insert(doc);
+        } catch (Exception ex) {
+            logger.error("[MongodbReplicaSetProducer] sendOneway happen exception.", ex);
+        }
     }
 
     @Override

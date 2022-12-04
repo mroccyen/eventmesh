@@ -55,6 +55,7 @@ public class MongodbConsumer implements Consumer {
 
     @Override
     public void init(Properties keyValue) throws Exception {
+        this.configurationHolder.init();
         String connectorType = configurationHolder.getConnectorType();
         if (connectorType.equals(ConfigKey.STANDALONE)) {
             consumer = new MongodbStandaloneConsumer(configurationHolder);

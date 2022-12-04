@@ -54,9 +54,10 @@ public class MongodbProducer implements Producer {
 
     @Override
     public void init(Properties properties) throws Exception {
+        this.configurationHolder.init();
         String connectorType = configurationHolder.getConnectorType();
         if (connectorType.equals(ConfigKey.STANDALONE)) {
-            producer = new MongodbStandaloneProcuder(configurationHolder);
+            producer = new MongodbStandaloneProducer(configurationHolder);
         }
         if (connectorType.equals(ConfigKey.REPLICA_SET)) {
             producer = new MongodbReplicaSetProducer(configurationHolder);
@@ -65,32 +66,32 @@ public class MongodbProducer implements Producer {
     }
 
     @Override
-    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) {
-
+    public void publish(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
+        producer.publish(cloudEvent, sendCallback);
     }
 
     @Override
     public void sendOneway(CloudEvent cloudEvent) {
-
+        producer.sendOneway(cloudEvent);
     }
 
     @Override
-    public void request(CloudEvent cloudEvent, RequestReplyCallback rrCallback, long timeout) {
-
+    public void request(CloudEvent cloudEvent, RequestReplyCallback rrCallback, long timeout) throws Exception {
+        producer.request(cloudEvent, rrCallback, timeout);
     }
 
     @Override
-    public boolean reply(CloudEvent cloudEvent, SendCallback sendCallback) {
-        return false;
+    public boolean reply(CloudEvent cloudEvent, SendCallback sendCallback) throws Exception {
+        return producer.reply(cloudEvent, sendCallback);
     }
 
     @Override
-    public void checkTopicExist(String topic) {
-
+    public void checkTopicExist(String topic) throws Exception {
+        producer.checkTopicExist(topic);
     }
 
     @Override
     public void setExtFields() {
-
+        producer.setExtFields();
     }
 }

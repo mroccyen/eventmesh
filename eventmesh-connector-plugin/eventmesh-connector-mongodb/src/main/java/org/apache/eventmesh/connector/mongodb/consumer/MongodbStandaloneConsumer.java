@@ -21,19 +21,25 @@ import com.mongodb.*;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
+import org.apache.eventmesh.api.EventMeshAction;
+import org.apache.eventmesh.api.EventMeshAsyncConsumeContext;
 import org.apache.eventmesh.api.consumer.Consumer;
 import org.apache.eventmesh.common.ThreadPoolFactory;
 import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
+import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MongodbStandaloneConsumer implements Consumer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MongodbStandaloneConsumer.class);
 
     private final ConfigurationHolder configurationHolder;
 
@@ -47,7 +53,12 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     private DBCollection cappedCol;
 
-    private final ThreadPoolExecutor executor = ThreadPoolFactory.createThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2, Runtime.getRuntime().availableProcessors() * 2, "EventMesh-Mongodb-Consumer-");
+    private SubTask task = new SubTask();
+
+    private final ThreadPoolExecutor executor = ThreadPoolFactory.createThreadPoolExecutor(
+            Runtime.getRuntime().availableProcessors() * 2,
+            Runtime.getRuntime().availableProcessors() * 2,
+            "EventMesh-Mongodb-Consumer-");
 
     public MongodbStandaloneConsumer(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
@@ -83,7 +94,6 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     @Override
     public void init(Properties keyValue) {
-        this.configurationHolder.init();
         this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
         this.db = client.getDB(configurationHolder.getDatabase());
         this.cappedCol = db.getCollection(configurationHolder.getCollection());
@@ -96,12 +106,13 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     @Override
     public void subscribe(String topic) {
-        executor.execute(new SubTask());
+        task = new SubTask();
+        executor.execute(task);
     }
 
     @Override
     public void unsubscribe(String topic) {
-
+        task.stop();
     }
 
     @Override
@@ -132,23 +143,27 @@ public class MongodbStandaloneConsumer implements Consumer {
         public void run() {
             int lastId = -1;
             while (!stop.get()) {
-                DBCursor cur = getCursor(cappedCol, MongodbConstants.Topic, lastId);
-                Iterator<DBObject> it = cur.iterator();
-                while (it.hasNext()) {
-                    DBObject obj = it.next();
-                    System.out.println("name is:" + obj.get(MongodbConstants.CAPPED_COL_NAME_FN));
+                DBCursor cur = getCursor(cappedCol, MongodbConstants.TOPIC, lastId);
+                for (DBObject obj : cur) {
+                    CloudEvent cloudEvent = MongodbCloudEventUtil.convertToCloudEvent(obj);
+                    final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
+                        @Override
+                        public void commit(EventMeshAction action) {
+                            LOGGER.info("[MongodbReplicaSetConsumer] Mongodb consumer context commit.");
+                        }
+                    };
+                    if (eventListener != null) {
+                        eventListener.consume(cloudEvent, consumeContext);
+                    }
+                    LOGGER.info("name is:" + obj.get(MongodbConstants.CAPPED_COL_NAME_FN));
                     try {
                         lastId = (int) ((Double) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN)).doubleValue();
                     } catch (ClassCastException ce) {
                         lastId = (Integer) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN);
                     }
-                    System.out.println("last index is:" + lastId);
+                    LOGGER.info("last index is:" + lastId);
                 }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                Thread.yield();
             }
         }
 
