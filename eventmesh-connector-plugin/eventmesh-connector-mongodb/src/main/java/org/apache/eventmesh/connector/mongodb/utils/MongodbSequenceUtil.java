@@ -4,6 +4,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.MongoClient;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 
@@ -13,7 +14,7 @@ public class MongodbSequenceUtil {
     private final DBCollection seqCol;
 
     public MongodbSequenceUtil(ConfigurationHolder configurationHolder) {
-        mongoClient = new MongoClient();
+        mongoClient = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
         db = mongoClient.getDB(configurationHolder.getDatabase());
         seqCol = db.getCollection(MongodbConstants.SEQUENCE_COLLECTION_NAME);
     }
