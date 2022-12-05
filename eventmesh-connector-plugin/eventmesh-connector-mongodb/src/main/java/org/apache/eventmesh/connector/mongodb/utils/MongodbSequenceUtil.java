@@ -9,6 +9,7 @@ import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneMana
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 
+@SuppressWarnings("all")
 public class MongodbSequenceUtil {
     private final MongoClient mongoClient;
     private final DB db;

@@ -37,6 +37,7 @@ import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("all")
 public class MongodbStandaloneConsumer implements Consumer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MongodbStandaloneConsumer.class);
@@ -121,18 +122,11 @@ public class MongodbStandaloneConsumer implements Consumer {
     }
 
     private DBCursor getCursor(DBCollection collection, String topic, int lastId) {
-        DBObject options = new BasicDBObject()
-                .append(MongodbConstants.CAPPED_COL_OPTION_TAILABLE_FN, true)
-                .append(MongodbConstants.CAPPED_COL_OPTION_AWAIT_DATA_FN, true)
-                .append(MongodbConstants.CAPPED_COL_TOPIC_FN, true)
-                .append(MongodbConstants.CAPPED_COL_NAME_FN, true)
-                .append(MongodbConstants.CAPPED_COL_CURSOR_FN, true);
-
         DBObject index = new BasicDBObject("$gt", lastId);
         BasicDBObject ts = new BasicDBObject(MongodbConstants.CAPPED_COL_CURSOR_FN, index);
 
         DBObject spec = ts.append(MongodbConstants.CAPPED_COL_TOPIC_FN, topic);
-        DBCursor cur = collection.find(spec, options);
+        DBCursor cur = collection.find(spec);
         cur = cur.addOption(8);
         return cur;
     }
@@ -155,7 +149,6 @@ public class MongodbStandaloneConsumer implements Consumer {
                     if (eventListener != null) {
                         eventListener.consume(cloudEvent, consumeContext);
                     }
-                    LOGGER.info("name is:" + obj.get(MongodbConstants.CAPPED_COL_NAME_FN));
                     try {
                         lastId = (int) ((Double) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN)).doubleValue();
                     } catch (ClassCastException ce) {

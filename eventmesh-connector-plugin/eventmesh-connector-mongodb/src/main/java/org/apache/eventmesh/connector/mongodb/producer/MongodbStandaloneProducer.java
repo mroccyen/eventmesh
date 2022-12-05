@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
+@SuppressWarnings("all")
 public class MongodbStandaloneProducer implements Producer {
 
     private static final Logger logger = LoggerFactory.getLogger(MongodbStandaloneProducer.class);
@@ -100,7 +101,6 @@ public class MongodbStandaloneProducer implements Producer {
             BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
-                    .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
             logger.info("publisher is going to publish number " + i + "th message");
             cappedCol.insert(doc);
@@ -127,7 +127,6 @@ public class MongodbStandaloneProducer implements Producer {
             BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
-                    .append(MongodbConstants.CAPPED_COL_NAME_FN, "name" + i)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
             logger.info("publisher is going to publish number " + i + "th message");
             cappedCol.insert(doc);

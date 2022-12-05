@@ -13,8 +13,9 @@ import java.nio.charset.StandardCharsets;
 
 public class MongodbCloudEventUtil {
     public static CloudEvent convertToCloudEvent(Document document) {
+        document.remove("_id");
         String versionStr = document.getString("version");
-        SpecVersion version = SpecVersion.parse(versionStr);
+        SpecVersion version = SpecVersion.valueOf(versionStr);
         CloudEventBuilder builder;
         switch (version) {
             case V03:
@@ -53,8 +54,9 @@ public class MongodbCloudEventUtil {
     }
 
     public static CloudEvent convertToCloudEvent(DBObject dbObject) {
+        dbObject.removeField("_id");
         String versionStr = (String) dbObject.get("version");
-        SpecVersion version = SpecVersion.parse(versionStr);
+        SpecVersion version = SpecVersion.valueOf(versionStr);
         CloudEventBuilder builder;
         switch (version) {
             case V03:
