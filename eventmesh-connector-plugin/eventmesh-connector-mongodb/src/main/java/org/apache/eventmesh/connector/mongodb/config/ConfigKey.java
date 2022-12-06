@@ -27,10 +27,6 @@ public class ConfigKey {
 
     public static final String URL = "eventMesh.server.mongodb.url";
 
-    public static final String USERNAME = "eventMesh.server.mongodb.username";
-
-    public static final String PASSWORD = "eventMesh.server.mongodb.password";
-
     public static final String DATABASE = "eventMesh.server.mongodb.database";
 
     public static final String COLLECTION = "eventMesh.server.mongodb.collection";

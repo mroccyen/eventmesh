@@ -17,10 +17,9 @@
 
 package org.apache.eventmesh.connector.mongodb.producer;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
@@ -28,11 +27,12 @@ import org.apache.eventmesh.api.SendResult;
 import org.apache.eventmesh.api.exception.ConnectorRuntimeException;
 import org.apache.eventmesh.api.exception.OnExceptionContext;
 import org.apache.eventmesh.api.producer.Producer;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbSequenceUtil;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,9 +49,9 @@ public class MongodbStandaloneProducer implements Producer {
 
     private MongoClient client;
 
-    private DB db;
+    private MongoDatabase db;
 
-    private DBCollection cappedCol;
+    private MongoCollection<Document> cappedCol;
 
     private MongodbSequenceUtil mongodbSequenceUtil;
 
@@ -80,7 +80,7 @@ public class MongodbStandaloneProducer implements Producer {
     public void shutdown() {
         if (started) {
             try {
-                MongodbClientStandaloneManager.closeMongodbClient(this.client);
+                MongodbClientManager.closeMongodbClient(this.client);
             } finally {
                 started = false;
             }
@@ -89,8 +89,8 @@ public class MongodbStandaloneProducer implements Producer {
 
     @Override
     public void init(Properties keyValue) {
-        this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
-        this.db = client.getDB(configurationHolder.getDatabase());
+        this.client = MongodbClientManager.createMongodbClient(configurationHolder.getUrl());
+        this.db = client.getDatabase(configurationHolder.getDatabase());
         this.cappedCol = db.getCollection(configurationHolder.getCollection());
         this.mongodbSequenceUtil = new MongodbSequenceUtil(configurationHolder);
     }
@@ -98,11 +98,11 @@ public class MongodbStandaloneProducer implements Producer {
     @Override
     public void publish(CloudEvent cloudEvent, SendCallback sendCallback) {
         try {
-            BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
+            Document doc = MongodbCloudEventUtil.convertToDocument(cloudEvent);
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
-            cappedCol.insert(doc);
+            cappedCol.insertOne(doc);
 
             SendResult sendResult = new SendResult();
             sendResult.setTopic(cloudEvent.getSubject());
@@ -123,11 +123,11 @@ public class MongodbStandaloneProducer implements Producer {
     @Override
     public void sendOneway(CloudEvent cloudEvent) {
         try {
-            BasicDBObject doc = MongodbCloudEventUtil.convertToDBObject(cloudEvent);
+            Document doc = MongodbCloudEventUtil.convertToDocument(cloudEvent);
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
-            cappedCol.insert(doc);
+            cappedCol.insertOne(doc);
         } catch (Exception ex) {
             logger.error("[MongodbStandaloneProducer] sendOneway happen exception.", ex);
         }

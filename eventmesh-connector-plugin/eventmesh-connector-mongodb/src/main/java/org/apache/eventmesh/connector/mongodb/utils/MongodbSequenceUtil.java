@@ -1,34 +1,35 @@
 package org.apache.eventmesh.connector.mongodb.utils;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.MongoClient;
-import com.mongodb.client.model.DBCollectionFindAndModifyOptions;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
+import org.bson.Document;
 
 @SuppressWarnings("all")
 public class MongodbSequenceUtil {
     private final MongoClient mongoClient;
-    private final DB db;
-    private final DBCollection seqCol;
+    private final MongoDatabase db;
+    private final MongoCollection<Document> seqCol;
 
     public MongodbSequenceUtil(ConfigurationHolder configurationHolder) {
-        mongoClient = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
-        db = mongoClient.getDB(configurationHolder.getDatabase());
+        mongoClient = MongodbClientManager.createMongodbClient(configurationHolder.getUrl());
+        db = mongoClient.getDatabase(configurationHolder.getDatabase());
         seqCol = db.getCollection(MongodbConstants.SEQUENCE_COLLECTION_NAME);
     }
 
     public int getNextSeq(String topic) {
-        BasicDBObject query = new BasicDBObject(MongodbConstants.SEQUENCE_KEY_FN, topic);
-        BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject(MongodbConstants.SEQUENCE_VALUE_FN, 1));
-        DBCollectionFindAndModifyOptions options = new DBCollectionFindAndModifyOptions();
-        options.update(update);
-        options.returnNew(true);
+        Document query = new Document(MongodbConstants.SEQUENCE_KEY_FN, topic);
+        Document update = new Document("$inc", new BasicDBObject(MongodbConstants.SEQUENCE_VALUE_FN, 1));
+        FindOneAndUpdateOptions options = new FindOneAndUpdateOptions();
         options.upsert(true);
-        BasicDBObject result = (BasicDBObject) seqCol.findAndModify(query, options);
+        options.returnDocument(ReturnDocument.AFTER);
+        Document result = seqCol.findOneAndUpdate(query, update, options);
         return (int) (Integer) result.get(MongodbConstants.SEQUENCE_VALUE_FN);
     }
 }

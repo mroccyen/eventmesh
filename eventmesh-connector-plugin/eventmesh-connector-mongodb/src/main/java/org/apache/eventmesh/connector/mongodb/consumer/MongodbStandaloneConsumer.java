@@ -18,6 +18,11 @@
 package org.apache.eventmesh.connector.mongodb.consumer;
 
 import com.mongodb.*;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.CreateCollectionOptions;
 import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
@@ -25,10 +30,11 @@ import org.apache.eventmesh.api.EventMeshAction;
 import org.apache.eventmesh.api.EventMeshAsyncConsumeContext;
 import org.apache.eventmesh.api.consumer.Consumer;
 import org.apache.eventmesh.common.ThreadPoolFactory;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientStandaloneManager;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +56,9 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     private MongoClient client;
 
-    private DB db;
+    private MongoDatabase db;
 
-    private DBCollection cappedCol;
+    private MongoCollection<Document> cappedCol;
 
     private SubTask task = new SubTask();
 
@@ -86,7 +92,7 @@ public class MongodbStandaloneConsumer implements Consumer {
     public void shutdown() {
         if (started) {
             try {
-                MongodbClientStandaloneManager.closeMongodbClient(this.client);
+                MongodbClientManager.closeMongodbClient(this.client);
             } finally {
                 started = false;
             }
@@ -95,8 +101,8 @@ public class MongodbStandaloneConsumer implements Consumer {
 
     @Override
     public void init(Properties keyValue) {
-        this.client = MongodbClientStandaloneManager.createMongodbClient(configurationHolder);
-        this.db = client.getDB(configurationHolder.getDatabase());
+        this.client = MongodbClientManager.createMongodbClient(configurationHolder.getUrl());
+        this.db = client.getDatabase(configurationHolder.getDatabase());
         this.cappedCol = db.getCollection(configurationHolder.getCollection());
     }
 
@@ -121,14 +127,13 @@ public class MongodbStandaloneConsumer implements Consumer {
         this.eventListener = listener;
     }
 
-    private DBCursor getCursor(DBCollection collection, String topic, int lastId) {
-        DBObject index = new BasicDBObject("$gt", lastId);
-        BasicDBObject ts = new BasicDBObject(MongodbConstants.CAPPED_COL_CURSOR_FN, index);
+    private FindIterable<Document> getCursor(MongoCollection<Document> collection, String topic, int lastId) {
+        Document index = new Document("$gt", lastId);
+        Document ts = new Document(MongodbConstants.CAPPED_COL_CURSOR_FN, index);
 
-        DBObject spec = ts.append(MongodbConstants.CAPPED_COL_TOPIC_FN, topic);
-        DBCursor cur = collection.find(spec);
-        cur = cur.addOption(8);
-        return cur;
+        Document spec = ts.append(MongodbConstants.CAPPED_COL_TOPIC_FN, topic);
+        FindIterable<Document> documents = collection.find(spec);
+        return documents;
     }
 
     private class SubTask implements Runnable {
@@ -138,8 +143,8 @@ public class MongodbStandaloneConsumer implements Consumer {
             int lastId = -1;
             while (!stop.get()) {
                 try {
-                    DBCursor cur = getCursor(cappedCol, MongodbConstants.TOPIC, lastId);
-                    for (DBObject obj : cur) {
+                    FindIterable<Document> cur = getCursor(cappedCol, MongodbConstants.TOPIC, lastId);
+                    for (Document obj : cur) {
                         CloudEvent cloudEvent = MongodbCloudEventUtil.convertToCloudEvent(obj);
                         final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
                             @Override

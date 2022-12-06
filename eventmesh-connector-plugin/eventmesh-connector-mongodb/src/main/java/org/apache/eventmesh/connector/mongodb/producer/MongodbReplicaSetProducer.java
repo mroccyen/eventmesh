@@ -26,7 +26,7 @@ import org.apache.eventmesh.api.SendResult;
 import org.apache.eventmesh.api.exception.ConnectorRuntimeException;
 import org.apache.eventmesh.api.exception.OnExceptionContext;
 import org.apache.eventmesh.api.producer.Producer;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientReplicaSetManager;
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
 import org.bson.Document;
@@ -70,7 +70,7 @@ public class MongodbReplicaSetProducer implements Producer {
         if (started) {
             try {
                 if (this.mongoClient != null) {
-                    MongodbClientReplicaSetManager.closeMongodbClient(this.mongoClient);
+                    MongodbClientManager.closeMongodbClient(this.mongoClient);
                 }
             } finally {
                 started = false;
@@ -80,7 +80,7 @@ public class MongodbReplicaSetProducer implements Producer {
 
     @Override
     public void init(Properties properties) {
-        this.mongoClient = MongodbClientReplicaSetManager.createMongodbClient(configurationHolder.getUrl());
+        this.mongoClient = MongodbClientManager.createMongodbClient(configurationHolder.getUrl());
     }
 
     @Override

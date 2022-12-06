@@ -21,7 +21,7 @@ import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 
-public class MongodbClientReplicaSetManager {
+public class MongodbClientManager {
     /**
      * create mongodb client
      *
