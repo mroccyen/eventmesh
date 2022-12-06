@@ -17,9 +17,11 @@
 
 package org.apache.eventmesh.connector.mongodb.config;
 
-import com.google.common.base.Preconditions;
-import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.common.base.Preconditions;
+
+import lombok.Data;
 
 @Data
 public class ConfigurationHolder {

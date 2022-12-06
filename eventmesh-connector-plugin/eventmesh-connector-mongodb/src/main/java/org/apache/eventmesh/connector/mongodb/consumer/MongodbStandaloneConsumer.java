@@ -17,13 +17,6 @@
 
 package org.apache.eventmesh.connector.mongodb.consumer;
 
-import com.mongodb.*;
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.CreateCollectionOptions;
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.EventMeshAction;
@@ -34,14 +27,22 @@ import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
-import org.bson.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.bson.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.cloudevents.CloudEvent;
+
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 @SuppressWarnings("all")
 public class MongodbStandaloneConsumer implements Consumer {

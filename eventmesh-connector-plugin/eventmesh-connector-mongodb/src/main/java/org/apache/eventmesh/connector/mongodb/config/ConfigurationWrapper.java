@@ -17,8 +17,9 @@
 
 package org.apache.eventmesh.connector.mongodb.config;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.eventmesh.common.Constants;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;

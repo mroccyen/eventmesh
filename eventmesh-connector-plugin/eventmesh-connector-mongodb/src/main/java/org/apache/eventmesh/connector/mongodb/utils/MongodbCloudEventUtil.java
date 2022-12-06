@@ -1,13 +1,15 @@
 package org.apache.eventmesh.connector.mongodb.utils;
 
-import io.cloudevents.CloudEvent;
-import io.cloudevents.SpecVersion;
-import io.cloudevents.core.builder.CloudEventBuilder;
 import org.apache.eventmesh.connector.mongodb.exception.MongodbConnectorException;
-import org.bson.Document;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+
+import org.bson.Document;
+
+import io.cloudevents.CloudEvent;
+import io.cloudevents.SpecVersion;
+import io.cloudevents.core.builder.CloudEventBuilder;
 
 public class MongodbCloudEventUtil {
     public static CloudEvent convertToCloudEvent(Document document) {

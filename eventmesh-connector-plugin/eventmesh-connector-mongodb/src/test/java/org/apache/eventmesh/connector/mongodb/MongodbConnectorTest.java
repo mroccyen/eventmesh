@@ -17,19 +17,21 @@
 
 package org.apache.eventmesh.connector.mongodb;
 
-import io.cloudevents.CloudEvent;
-import io.cloudevents.core.builder.CloudEventBuilder;
 import org.apache.eventmesh.api.EventMeshAction;
 import org.apache.eventmesh.api.SendCallback;
 import org.apache.eventmesh.api.SendResult;
 import org.apache.eventmesh.api.exception.OnExceptionContext;
-import org.junit.Assert;
-import org.junit.Test;
 
 import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import io.cloudevents.CloudEvent;
+import io.cloudevents.core.builder.CloudEventBuilder;
 
 public class MongodbConnectorTest extends MongodbServer {
     @Test

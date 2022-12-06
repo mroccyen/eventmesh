@@ -17,12 +17,6 @@
 
 package org.apache.eventmesh.connector.mongodb.consumer;
 
-import com.mongodb.client.ChangeStreamIterable;
-import com.mongodb.client.MongoChangeStreamCursor;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.changestream.ChangeStreamDocument;
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.EventMeshAction;
@@ -31,12 +25,21 @@ import org.apache.eventmesh.api.consumer.Consumer;
 import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
+
+import java.util.List;
+import java.util.Properties;
+
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Properties;
+import io.cloudevents.CloudEvent;
+
+import com.mongodb.client.ChangeStreamIterable;
+import com.mongodb.client.MongoChangeStreamCursor;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.changestream.ChangeStreamDocument;
 
 public class MongodbReplicaSetConsumer implements Consumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(MongodbReplicaSetConsumer.class);

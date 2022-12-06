@@ -17,10 +17,6 @@
 
 package org.apache.eventmesh.connector.mongodb.producer;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
 import org.apache.eventmesh.api.SendResult;
@@ -32,11 +28,18 @@ import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbSequenceUtil;
+
+import java.util.Properties;
+
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import io.cloudevents.CloudEvent;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 @SuppressWarnings("all")
 public class MongodbStandaloneProducer implements Producer {

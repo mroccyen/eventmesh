@@ -1,15 +1,17 @@
 package org.apache.eventmesh.connector.mongodb.utils;
 
+import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
+import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
+import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
+
+import org.bson.Document;
+
 import com.mongodb.BasicDBObject;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.ReturnDocument;
-import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
-import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
-import org.apache.eventmesh.connector.mongodb.constant.MongodbConstants;
-import org.bson.Document;
 
 @SuppressWarnings("all")
 public class MongodbSequenceUtil {

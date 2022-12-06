@@ -17,9 +17,6 @@
 
 package org.apache.eventmesh.connector.mongodb.producer;
 
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.RequestReplyCallback;
 import org.apache.eventmesh.api.SendCallback;
 import org.apache.eventmesh.api.SendResult;
@@ -29,11 +26,17 @@ import org.apache.eventmesh.api.producer.Producer;
 import org.apache.eventmesh.connector.mongodb.client.MongodbClientManager;
 import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 import org.apache.eventmesh.connector.mongodb.utils.MongodbCloudEventUtil;
+
+import java.util.Properties;
+
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
+import io.cloudevents.CloudEvent;
+
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
 
 public class MongodbReplicaSetProducer implements Producer {
     private static final Logger logger = LoggerFactory.getLogger(MongodbReplicaSetProducer.class);

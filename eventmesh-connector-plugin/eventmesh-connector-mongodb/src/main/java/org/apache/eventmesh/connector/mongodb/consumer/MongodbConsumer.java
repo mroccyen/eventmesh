@@ -17,7 +17,6 @@
 
 package org.apache.eventmesh.connector.mongodb.consumer;
 
-import io.cloudevents.CloudEvent;
 import org.apache.eventmesh.api.AbstractContext;
 import org.apache.eventmesh.api.EventListener;
 import org.apache.eventmesh.api.consumer.Consumer;
@@ -26,6 +25,8 @@ import org.apache.eventmesh.connector.mongodb.config.ConfigurationHolder;
 
 import java.util.List;
 import java.util.Properties;
+
+import io.cloudevents.CloudEvent;
 
 public class MongodbConsumer implements Consumer {
 
