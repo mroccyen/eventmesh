@@ -59,7 +59,7 @@ public class MongodbStandaloneConsumer implements Consumer {
     private final ThreadPoolExecutor executor = ThreadPoolFactory.createThreadPoolExecutor(
             Runtime.getRuntime().availableProcessors() * 2,
             Runtime.getRuntime().availableProcessors() * 2,
-            "EventMesh-Mongodb-Consumer-");
+            "EventMesh-Mongodb-StandaloneConsumer-");
 
     public MongodbStandaloneConsumer(ConfigurationHolder configurationHolder) {
         this.configurationHolder = configurationHolder;
@@ -137,24 +137,27 @@ public class MongodbStandaloneConsumer implements Consumer {
         public void run() {
             int lastId = -1;
             while (!stop.get()) {
-                DBCursor cur = getCursor(cappedCol, MongodbConstants.TOPIC, lastId);
-                for (DBObject obj : cur) {
-                    CloudEvent cloudEvent = MongodbCloudEventUtil.convertToCloudEvent(obj);
-                    final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
-                        @Override
-                        public void commit(EventMeshAction action) {
-                            LOGGER.info("[MongodbReplicaSetConsumer] Mongodb consumer context commit.");
+                try {
+                    DBCursor cur = getCursor(cappedCol, MongodbConstants.TOPIC, lastId);
+                    for (DBObject obj : cur) {
+                        CloudEvent cloudEvent = MongodbCloudEventUtil.convertToCloudEvent(obj);
+                        final EventMeshAsyncConsumeContext consumeContext = new EventMeshAsyncConsumeContext() {
+                            @Override
+                            public void commit(EventMeshAction action) {
+                                LOGGER.info("[MongodbStandaloneConsumer] Mongodb consumer context commit.");
+                            }
+                        };
+                        if (eventListener != null) {
+                            eventListener.consume(cloudEvent, consumeContext);
                         }
-                    };
-                    if (eventListener != null) {
-                        eventListener.consume(cloudEvent, consumeContext);
+                        try {
+                            lastId = (int) ((Double) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN)).doubleValue();
+                        } catch (ClassCastException ce) {
+                            lastId = (Integer) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN);
+                        }
                     }
-                    try {
-                        lastId = (int) ((Double) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN)).doubleValue();
-                    } catch (ClassCastException ce) {
-                        lastId = (Integer) obj.get(MongodbConstants.CAPPED_COL_CURSOR_FN);
-                    }
-                    LOGGER.info("last index is:" + lastId);
+                } catch (Exception ex) {
+                    LOGGER.error("[MongodbStandaloneConsumer] thread run happen exception.", ex);
                 }
                 Thread.yield();
             }

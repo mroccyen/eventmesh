@@ -102,7 +102,6 @@ public class MongodbStandaloneProducer implements Producer {
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
-            logger.info("publisher is going to publish number " + i + "th message");
             cappedCol.insert(doc);
 
             SendResult sendResult = new SendResult();
@@ -110,7 +109,7 @@ public class MongodbStandaloneProducer implements Producer {
             sendResult.setMessageId(cloudEvent.getId());
             sendCallback.onSuccess(sendResult);
         } catch (Exception ex) {
-            logger.error("[MongodbReplicaSetProducer] publish happen exception.", ex);
+            logger.error("[MongodbStandaloneProducer] publish happen exception.", ex);
             sendCallback.onException(
                     OnExceptionContext.builder()
                             .topic(cloudEvent.getSubject())
@@ -128,10 +127,9 @@ public class MongodbStandaloneProducer implements Producer {
             int i = mongodbSequenceUtil.getNextSeq(MongodbConstants.TOPIC);
             doc.append(MongodbConstants.CAPPED_COL_TOPIC_FN, MongodbConstants.TOPIC)
                     .append(MongodbConstants.CAPPED_COL_CURSOR_FN, i);
-            logger.info("publisher is going to publish number " + i + "th message");
             cappedCol.insert(doc);
         } catch (Exception ex) {
-            logger.error("[MongodbReplicaSetProducer] sendOneway happen exception.", ex);
+            logger.error("[MongodbStandaloneProducer] sendOneway happen exception.", ex);
         }
     }
 
