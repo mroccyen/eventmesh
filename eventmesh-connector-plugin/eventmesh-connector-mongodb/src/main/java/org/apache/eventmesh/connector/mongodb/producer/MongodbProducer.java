@@ -35,22 +35,22 @@ public class MongodbProducer implements Producer {
 
     @Override
     public boolean isStarted() {
-        return false;
+        return producer.isStarted();
     }
 
     @Override
     public boolean isClosed() {
-        return false;
+        return producer.isClosed();
     }
 
     @Override
     public void start() {
-
+        producer.start();
     }
 
     @Override
     public void shutdown() {
-
+        producer.shutdown();
     }
 
     @Override
