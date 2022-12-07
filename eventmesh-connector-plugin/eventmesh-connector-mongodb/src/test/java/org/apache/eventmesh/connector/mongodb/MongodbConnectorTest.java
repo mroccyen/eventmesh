@@ -35,16 +35,6 @@ import io.cloudevents.core.builder.CloudEventBuilder;
 
 public class MongodbConnectorTest extends MongodbServer {
     @Test
-    public void isStarted() {
-        Assert.assertTrue(mongodbConsumer.isStarted());
-    }
-
-    @Test
-    public void isClosed() {
-        Assert.assertFalse(mongodbConsumer.isClosed());
-    }
-
-    @Test
     public void subscribe() throws Exception {
         final int expectedCount = 5;
         final CountDownLatch downLatch = new CountDownLatch(expectedCount);

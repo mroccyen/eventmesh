@@ -44,7 +44,7 @@ public class MongodbServerTest {
         // server.enableOplog();
 
         // bind on a random local port
-        server.bind("127.0.0.1", 27018);
+        server.bind("127.0.0.1", 27011);
         String connectionString = server.getConnectionString();
 
         client = MongoClients.create(connectionString);
